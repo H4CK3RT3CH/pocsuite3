@@ -1,5 +1,11 @@
+import copy
+import time
 from random import choice
-from pocsuite3.lib.core.data import conf
+from urllib.parse import urlparse
+
+import requests
+
+from pocsuite3.lib.core.data import conf, kb
 from pocsuite3.lib.core.enums import HTTP_HEADER
 from requests.models import Request
 from requests.sessions import Session
@@ -32,9 +38,26 @@ def session_request(self, method, url,
     )
     prep = self.prepare_request(req)
 
+    p = urlparse(prep.url)
+    _headers = copy.deepcopy(prep.headers)
+    if "Host" not in _headers:
+        _headers["Host"] = p.netloc
+    _path = p.path
+
+    raw = ''
+    if prep.body:
+        raw = "{}\n{}\n\n{}\n\n".format(
+            prep.method + ' ' + _path + ' HTTP/1.1',
+            '\n'.join('{}: {}'.format(k, v) for k, v in _headers.items()),
+            prep.body)
+    else:
+        raw = "{}\n{}\n\n".format(
+            prep.method + ' ' + _path + ' HTTP/1.1',
+            '\n'.join('{}: {}'.format(k, v) for k, v in _headers.items()))
+
     # proxies = proxies or (conf.proxies if 'proxies' in conf else {})
     if proxies is None:
-       proxies = conf.proxies if 'proxies' in conf else {}
+        proxies = conf.proxies if 'proxies' in conf else {}
 
     settings = self.merge_environment_settings(
         prep.url, proxies, stream, verify, cert
@@ -60,8 +83,26 @@ def session_request(self, method, url,
             encoding = resp.apparent_encoding
 
         resp.encoding = encoding
-
+    try:
+        respText = generateResponse(resp)
+    except Exception as e:
+        respText = '{}:{}'.format(Exception, e)
+    if conf.req_log or conf.req_log_file:
+        kb.req_log.append({
+            "time": time.time(),
+            "request": raw,
+            "response": respText
+        })
     return resp
+
+
+def generateResponse(resp: requests.Response):
+    response_raw = "HTTP/1.1 {} {}\r\n".format(resp.status_code, resp.reason)
+    for k, v in resp.headers.items():
+        response_raw += "{}: {}\r\n".format(k, v)
+    response_raw += "\r\n"
+    response_raw += resp.text
+    return response_raw
 
 
 def patch_session():

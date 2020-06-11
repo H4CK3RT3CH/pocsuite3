@@ -1,8 +1,11 @@
 import copy
+import json
+import os
 import time
+import datetime
 
 from pocsuite3.lib.core.common import data_to_stdout, desensitization
-from pocsuite3.lib.core.data import conf, cmd_line_options
+from pocsuite3.lib.core.data import conf, cmd_line_options, paths
 from pocsuite3.lib.core.data import kb
 from pocsuite3.lib.core.data import logger
 from pocsuite3.lib.core.datatype import AttribDict
@@ -153,6 +156,27 @@ def task_run():
             continue
 
         if not conf.quiet:
+            if conf.req_log:
+                index = 0
+                for logs in kb.req_log:
+                    index += 1
+                    date = datetime.datetime.fromtimestamp(logs["time"]).strftime("%Y-%m-%d %X")
+                    request = logs["request"]
+                    # response = logs["repsonse"]
+                    kb.thread_lock.acquire()
+                    print(f"[{date}] Request log #{index}")
+                    print(request)
+                    kb.thread_lock.release()
+            if conf.req_log_file:
+                index = 0
+                filename = os.path.join(paths.POCSUITE_OUTPUT_PATH, "{}_packet.json".format(poc_module.__name__))
+                for logs in kb.req_log:
+                    index += 1
+                    kb.thread_lock.acquire()
+                    with open(filename, 'a+') as f:
+                        f.write(json.dumps(logs) + '\n')
+                    kb.thread_lock.release()
+                logger.info("request log has benn saved in {}".format(filename))
             result.show_result()
 
         result_status = "success" if result.is_success() else "failed"

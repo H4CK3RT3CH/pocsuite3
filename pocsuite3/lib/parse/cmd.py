@@ -116,6 +116,10 @@ def cmd_line_parser(argv=None):
                                   help="Activate quiet mode, working without logger.")
         optimization.add_argument("--ppt", dest="ppt", action="store_true", default=False,
                                   help="Hiden sensitive information when published to the network")
+        optimization.add_argument("--req-log", dest='req_log', action="store_true", default=False,
+                                  help="Record the request packet ice sent by the poc and display it on the screen."),
+        optimization.add_argument("--req-log-file", dest='req_log_file', action="store_true", default=False,
+                                  help="Record request packets sent by poc and save them to a file.")
 
         # Diy options
         diy = parser.add_argument_group("Poc options", "definition options for PoC")

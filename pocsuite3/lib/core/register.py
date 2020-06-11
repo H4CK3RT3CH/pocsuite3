@@ -79,6 +79,7 @@ def load_file_to_module(file_path, module_name=None):
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
         poc_model = kb.registered_pocs[module_name]
+        setattr(poc_model, "__name__", module_name)
     except KeyError:
         poc_model = None
     except ImportError:

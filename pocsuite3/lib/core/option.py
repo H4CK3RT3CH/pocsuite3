@@ -4,6 +4,7 @@ import logging
 import os
 import re
 import socket
+import threading
 from queue import Queue
 from urllib.parse import urlsplit
 
@@ -537,6 +538,8 @@ def _set_conf_attributes():
     conf.show_version = False
     conf.api = False  # api for zipoc
     conf.ppt = False
+    conf.req_log = False
+    conf.req_log_file = False
 
 
 def _set_kb_attributes(flush_all=True):
@@ -583,6 +586,9 @@ def _set_kb_attributes(flush_all=True):
     kb.cmd_line = DIY_OPTIONS or []
 
     kb.comparison = None
+    kb.req_log = []
+    # {"request":"","response":"","time":""}
+    kb.thread_lock = threading.Lock()
 
 
 def _merge_options(input_options, override_options):
