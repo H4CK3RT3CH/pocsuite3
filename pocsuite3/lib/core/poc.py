@@ -1,4 +1,5 @@
 import re
+import time
 import traceback
 from collections import OrderedDict
 from urllib.parse import urlparse
@@ -9,7 +10,7 @@ from requests.exceptions import HTTPError
 from requests.exceptions import TooManyRedirects
 
 from pocsuite3.lib.core.common import parse_target_url, desensitization
-from pocsuite3.lib.core.data import conf
+from pocsuite3.lib.core.data import conf, kb
 from pocsuite3.lib.core.data import logger
 from pocsuite3.lib.core.enums import OUTPUT_STATUS, CUSTOM_LOGGING, ERROR_TYPE_ID, POC_CATEGORY
 from pocsuite3.lib.core.exception import PocsuiteValidationException
@@ -57,6 +58,15 @@ class POCBase(object):
         # module options init
         if hasattr(self, "_options"):
             self.options.update(self._options())
+
+    def add_request_log(self, request: str, response: str):
+        kb.thread_lock.acquire()
+        kb.req_log.append({
+            "time": time.time(),
+            "request": request,
+            "response": response
+        })
+        kb.thread_lock.release()
 
     def get_options(self):
         tmp = OrderedDict()
